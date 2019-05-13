@@ -82,6 +82,9 @@ static bool align_tabs;
 /* Print width of line numbers and byte offsets.  Nonzero if ALIGN_TABS.  */
 static int offset_width;
 
+/* Beep to notify user if something was matched */
+static int beep_on_match;
+
 /* See below */
 struct FL_pair
   {
@@ -424,7 +427,8 @@ enum
   GROUP_SEPARATOR_OPTION,
   INCLUDE_OPTION,
   LINE_BUFFERED_OPTION,
-  LABEL_OPTION
+  LABEL_OPTION,
+  BEEP_OPTION,
 };
 
 /* Long options equivalences. */
@@ -480,6 +484,7 @@ static struct option const long_options[] =
   {"version", no_argument, NULL, 'V'},
   {"with-filename", no_argument, NULL, 'H'},
   {"word-regexp", no_argument, NULL, 'w'},
+  {"make-some-noise", no_argument, NULL, BEEP_OPTION},
   {0, 0, 0, 0}
 };
 
@@ -1359,6 +1364,16 @@ prtext (char *beg, char *lim)
   outleft -= n;
 }
 
+void
+do_beep()
+{
+  int ret;
+  ret = system("aplay /usr/lib/libreoffice/share/gallery/sounds/left.wav &");
+  usleep(1e4);
+  if (ret)
+    printf("failed to beep: %d\n", ret);
+}
+
 /* Replace all NUL bytes in buffer P (which ends at LIM) with EOL.
    This avoids running out of memory when binary input contains a long
    sequence of zeros, which would otherwise be considered to be part
@@ -1410,6 +1425,8 @@ grepbuf (char *beg, char const *lim)
         {
           char *prbeg = out_invert ? p : b;
           char *prend = out_invert ? b : endp;
+          if (beep_on_match)
+            do_beep();
           prtext (prbeg, prend);
           if (!outleft || done_on_match)
             {
@@ -2761,6 +2778,10 @@ main (int argc, char **argv)
 
       case LABEL_OPTION:
         label = optarg;
+        break;
+
+      case BEEP_OPTION:
+        beep_on_match = true;
         break;
 
       case 0:
