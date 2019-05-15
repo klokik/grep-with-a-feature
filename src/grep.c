@@ -1364,7 +1364,7 @@ prtext (char *beg, char *lim)
   outleft -= n;
 }
 
-void
+static void
 do_beep()
 {
   int ret;
