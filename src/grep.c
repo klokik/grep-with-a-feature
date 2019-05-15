@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include "system.h"
 
+#if HAVE_CURL
+#include <curl/curl.h>
+#endif
+
 #include "argmatch.h"
 #include "c-ctype.h"
 #include "c-stack.h"
@@ -47,6 +51,7 @@
 #include "safe-read.h"
 #include "search.h"
 #include "c-strcase.h"
+#include "unistd.h"
 #include "version-etc.h"
 #include "xalloc.h"
 #include "xbinary-io.h"
@@ -81,6 +86,9 @@ static bool align_tabs;
 
 /* Print width of line numbers and byte offsets.  Nonzero if ALIGN_TABS.  */
 static int offset_width;
+
+/* URL is provided instead of regular filename */
+static bool url_path;
 
 /* See below */
 struct FL_pair
@@ -424,7 +432,8 @@ enum
   GROUP_SEPARATOR_OPTION,
   INCLUDE_OPTION,
   LINE_BUFFERED_OPTION,
-  LABEL_OPTION
+  LABEL_OPTION,
+  URL_PATH_OPTION,
 };
 
 /* Long options equivalences. */
@@ -461,6 +470,7 @@ static struct option const long_options[] =
   {"line-number", no_argument, NULL, 'n'},
   {"line-regexp", no_argument, NULL, 'x'},
   {"max-count", required_argument, NULL, 'm'},
+  {"url", no_argument, NULL, URL_PATH_OPTION},
 
   {"no-filename", no_argument, NULL, 'h'},
   {"no-group-separator", no_argument, NULL, GROUP_SEPARATOR_OPTION},
@@ -532,6 +542,7 @@ static enum
   } devices = READ_COMMAND_LINE_DEVICES;
 
 static bool grepfile (int, char const *, bool, bool);
+static bool grepurl (char const *, bool, bool);
 static bool grepdesc (int, bool);
 
 static bool
@@ -1704,6 +1715,43 @@ grepfile (int dirdesc, char const *name, bool follow, bool command_line)
   return grepdesc (desc, command_line);
 }
 
+/* Create a new process that reads data from URL and sends it to pipe,
+   the other side of pipe is used as a file descriptor in grepdesc */
+static bool
+grepurl (char const *url, bool follow, bool command_line)
+{
+  int pipe_fd[2];
+  if (pipe(pipe_fd) < 0)
+    {
+      suppressible_error(errno);
+      return true;
+    }
+
+  if (!fork())
+    {
+      close (pipe_fd[0]);
+
+      CURL *curl = curl_easy_init ();
+      if (!curl)
+        exit (EXIT_FAILURE);
+
+      FILE *out = fdopen (pipe_fd[1], "w");
+      curl_easy_setopt (curl, CURLOPT_URL, url);
+      curl_easy_setopt (curl, CURLOPT_WRITEDATA, out);
+      curl_easy_setopt (curl, CURLOPT_FOLLOWLOCATION, follow);
+
+      int res = curl_easy_perform (curl);
+      fflush (out);
+
+      close (pipe_fd[1]);
+      curl_easy_cleanup (curl);
+
+      exit (EXIT_SUCCESS);
+    }
+
+  return grepdesc (pipe_fd[0], command_line);
+}
+
 /* Read all data from FD, with status ST.  Return true if successful,
    false (setting errno) otherwise.  */
 static bool
@@ -1889,6 +1937,11 @@ grep_command_line_arg (char const *arg)
       if (binary)
         xset_binary_mode (STDIN_FILENO, O_BINARY);
       return grepdesc (STDIN_FILENO, true);
+    }
+  else if (url_path)
+    {
+      filename = arg;
+      return grepurl (arg, true, true);
     }
   else
     {
@@ -2761,6 +2814,10 @@ main (int argc, char **argv)
 
       case LABEL_OPTION:
         label = optarg;
+        break;
+
+      case URL_PATH_OPTION:
+        url_path = true;
         break;
 
       case 0:
