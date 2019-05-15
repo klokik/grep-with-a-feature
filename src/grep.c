@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "system.h"
 
+#define HAVE_CURL 1
 #if HAVE_CURL
 #include <curl/curl.h>
 #endif
