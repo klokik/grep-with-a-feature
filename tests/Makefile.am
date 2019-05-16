@@ -161,7 +161,7 @@ TESTS =						\
   turkish-eyes					\
   two-chars					\
   two-files					\
-  uri						\
+  url						\
   unibyte-binary				\
   unibyte-bracket-expr				\
   unibyte-negated-circumflex			\

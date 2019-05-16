@@ -436,7 +436,7 @@ enum
   LINE_BUFFERED_OPTION,
   LABEL_OPTION,
   URL_PATH_OPTION,
-  CREDITIALS_OPTION,
+  CREDENTIALS_OPTION,
 };
 
 /* Long options equivalences. */
@@ -474,7 +474,7 @@ static struct option const long_options[] =
   {"line-regexp", no_argument, NULL, 'x'},
   {"max-count", required_argument, NULL, 'm'},
   {"url", no_argument, NULL, URL_PATH_OPTION},
-  {"user", required_argument, NULL, CREDITIALS_OPTION},
+  {"user", required_argument, NULL, CREDENTIALS_OPTION},
 
   {"no-filename", no_argument, NULL, 'h'},
   {"no-group-separator", no_argument, NULL, GROUP_SEPARATOR_OPTION},
@@ -2035,7 +2035,7 @@ Output control:\n\
   -r, --recursive           like --directories=recurse\n\
   -R, --dereference-recursive  likewise, but follow all symlinks\n\
       --url                 handle filename as URL, use cURL to get content\n\
-      --user                creditials for --url, in format 'user:passwd'\n\
+      --user                credentials for --url, in format 'user:passwd'\n\
 "));
       printf (_("\
       --include=GLOB        search only files that match GLOB (a file pattern)"
@@ -2840,7 +2840,7 @@ main (int argc, char **argv)
         url_path = true;
         break;
 
-      case CREDITIALS_OPTION:
+      case CREDENTIALS_OPTION:
         login = optarg;
         if (password = strchr (optarg, ':'))
             *password++ = '\0';
