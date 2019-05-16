@@ -1721,13 +1721,13 @@ static bool
 grepurl (char const *url, bool follow, bool command_line)
 {
   int pipe_fd[2];
-  if (pipe(pipe_fd) < 0)
+  if (pipe (pipe_fd) < 0)
     {
-      suppressible_error(errno);
+      suppressible_error (errno);
       return true;
     }
 
-  if (!fork())
+  if (!fork ())
     {
       close (pipe_fd[0]);
 
