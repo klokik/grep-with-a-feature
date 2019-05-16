@@ -1,0 +1,28 @@
+#!/bin/sh
+# Use of network locations as data source
+. "${srcdir=.}/init.sh"; path_prepend_ ../src
+
+mkdir -p x || framework_failure_
+echo aaa > x/a || framework_failure_
+
+denied="You do not have permission to view this directory or page."
+printf '%s\n' "cURL failed"       > exp-fail    || framework_failure_
+printf '%s\n' $denied             > exp-denied  || framework_failure_
+printf '%s\n' aaa                 > exp-aaa     || framework_failure_
+
+grep . x/a > out || fail=1
+compare exp-aaa out || fail=1
+
+grep --url . x/a 2> out
+test $? -eq 1 || fail=1
+compare exp-fail out || fail=1
+
+grep --url . file://$(pwd)/x/a > out
+compare exp-aaa out || fail=1
+
+auth_requried=http://www.httpwatch.com/httpgallery/authentication/authenticatedimage/default.aspx?0.7349707232788205 
+creditials=httpwatch:password
+
+grep --text --url --user $creditials GIF $auth_requried > out || fail=1
+
+Exit $fail
