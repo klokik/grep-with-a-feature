@@ -2843,7 +2843,6 @@ main (int argc, char **argv)
         login = optarg;
         if (password = strchr (optarg, ':'))
             *password++ = '\0';
-        printf("login: %s\npsswd: %s\n", login, password);
         break;
 
       case 0:
