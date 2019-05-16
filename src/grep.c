@@ -21,6 +21,7 @@
 #include <config.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <wchar.h>
 #include <inttypes.h>
 #include <stdarg.h>
@@ -1940,7 +1941,7 @@ grepdesc (int desc, bool command_line)
     suppressible_error (errno);
 
   if (url_path)
-    waitpid (-1);
+    waitpid (-1, NULL, 0);
 
   return status;
 }
