@@ -435,6 +435,7 @@ enum
   LINE_BUFFERED_OPTION,
   LABEL_OPTION,
   URL_PATH_OPTION,
+  CREDITIALS_OPTION,
 };
 
 /* Long options equivalences. */
@@ -472,6 +473,7 @@ static struct option const long_options[] =
   {"line-regexp", no_argument, NULL, 'x'},
   {"max-count", required_argument, NULL, 'm'},
   {"url", no_argument, NULL, URL_PATH_OPTION},
+  {"user", required_argument, NULL, CREDITIALS_OPTION},
 
   {"no-filename", no_argument, NULL, 'h'},
   {"no-group-separator", no_argument, NULL, GROUP_SEPARATOR_OPTION},
@@ -1025,6 +1027,8 @@ static intmax_t max_count;	/* Max number of selected
                                    lines from an input file.  */
 static bool line_buffered;	/* Use line buffering.  */
 static char *label = NULL;      /* Fake filename for stdin */
+static char *login;     /* Network authentication login */
+static char *password;  /* Network authentication password */
 
 
 /* Internal variables to keep track of byte count, context, etc. */
@@ -1740,9 +1744,16 @@ grepurl (char const *url, bool follow, bool command_line)
       curl_easy_setopt (curl, CURLOPT_WRITEDATA, out);
       curl_easy_setopt (curl, CURLOPT_FOLLOWLOCATION, follow);
 
-      int res = curl_easy_perform (curl);
-      fflush (out);
+      if (login)
+        curl_easy_setopt (curl, CURLOPT_USERNAME, login);
 
+      if (password)
+        curl_easy_setopt (curl, CURLOPT_PASSWORD, password);
+
+      if (curl_easy_perform (curl) != CURLE_OK)
+        dprintf(STDERR_FILENO, "cURL failed\n");
+
+      fflush (out);
       close (pipe_fd[1]);
       curl_easy_cleanup (curl);
 
@@ -2022,6 +2033,8 @@ Output control:\n\
                             ACTION is 'read' or 'skip'\n\
   -r, --recursive           like --directories=recurse\n\
   -R, --dereference-recursive  likewise, but follow all symlinks\n\
+      --url                 handle filename as URL, use cURL to get content\n\
+      --user                creditials for --url, in format 'user:passwd'\n\
 "));
       printf (_("\
       --include=GLOB        search only files that match GLOB (a file pattern)"
@@ -2824,6 +2837,13 @@ main (int argc, char **argv)
 
       case URL_PATH_OPTION:
         url_path = true;
+        break;
+
+      case CREDITIALS_OPTION:
+        login = optarg;
+        if (password = strchr (optarg, ':'))
+            *password++ = '\0';
+        printf("login: %s\npsswd: %s\n", login, password);
         break;
 
       case 0:
