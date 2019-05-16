@@ -712,7 +712,6 @@ buf_has_encoding_errors (char *buf, size_t size)
   return false;
 }
 
-
 /* Return true if BUF, of size SIZE, has a null byte.
    BUF must be followed by at least one byte,
    which may be arbitrarily written to or read from.  */
@@ -1750,6 +1749,8 @@ grepurl (char const *url, bool follow, bool command_line)
       exit (EXIT_SUCCESS);
     }
 
+  close (pipe_fd[1]);
+
   return grepdesc (pipe_fd[0], command_line);
 }
 
@@ -1788,7 +1789,7 @@ drain_input (int fd, struct stat const *st)
 static void
 finalize_input (int fd, struct stat const *st, bool ineof)
 {
-  if (fd == STDIN_FILENO
+  if ((fd == STDIN_FILENO || S_ISFIFO (st->st_mode))
       && (outleft
           ? (!ineof
              && (seek_failed
@@ -1926,6 +1927,10 @@ grepdesc (int desc, bool command_line)
  closeout:
   if (desc != STDIN_FILENO && close (desc) != 0)
     suppressible_error (errno);
+
+  if (url_path)
+    waitpid (-1);
+
   return status;
 }
 
