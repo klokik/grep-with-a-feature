@@ -1,6 +1,7 @@
 #!/bin/sh
 # Use of network locations as data source
 . "${srcdir=.}/init.sh"; path_prepend_ ../src
+require_curl_
 
 mkdir -p x || framework_failure_
 echo aaa > x/a || framework_failure_
@@ -21,8 +22,8 @@ grep --url . file://$(pwd)/x/a > out
 compare exp-aaa out || fail=1
 
 auth_requried=http://www.httpwatch.com/httpgallery/authentication/authenticatedimage/default.aspx?0.7349707232788205 
-creditials=httpwatch:password
+credentials=httpwatch:password
 
-grep --text --url --user $creditials GIF $auth_requried > out || fail=1
+grep --text --url --user $credentials GIF $auth_requried > out || fail=1
 
 Exit $fail

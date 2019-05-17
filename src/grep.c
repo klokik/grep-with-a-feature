@@ -1720,6 +1720,7 @@ grepfile (int dirdesc, char const *name, bool follow, bool command_line)
   return grepdesc (desc, command_line);
 }
 
+#if HAVE_CURL
 /* Create a new process that reads data from URL and sends it to pipe,
    the other side of pipe is used as a file descriptor in grepdesc */
 static bool
@@ -1765,6 +1766,14 @@ grepurl (char const *url, bool follow, bool command_line)
 
   return grepdesc (pipe_fd[0], command_line);
 }
+#else
+static bool
+grepurl (char const *url, bool follow, bool command_line)
+{
+  dprintf(STDERR_FILENO, "cURL unavailable\n");
+  return true;
+}
+#endif
 
 /* Read all data from FD, with status ST.  Return true if successful,
    false (setting errno) otherwise.  */
